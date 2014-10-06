@@ -3,9 +3,8 @@
 var mongoose          = require('mongoose');
 var Schema            = mongoose.Schema;
 
-var TranslationSchema = new Schema({
-/*    translationRequests:  {
-        id:                 String,
+var TranslationSchema   = new Schema({
+	      id:                 String,
         sourceLanguage:     String,
         targetLanguage:     String,
         source:             String,
@@ -14,9 +13,6 @@ var TranslationSchema = new Schema({
         creationDateTime:   Date,
         updateCounter:      Number,
         status:             String
-    }*/
-    translationRequests: Object
-},
-{ _id: false });
+});
 
-module.exports        = mongoose.model('Translations', TranslationSchema);
+module.exports = mongoose.model('Translations', TranslationSchema);

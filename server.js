@@ -2,7 +2,8 @@
 // =============================================================================
 
 var mongoose    = require('mongoose');
-mongoose.connect('mongodb://vinod:vinod123@ds063769.mongolab.com:63769/concorde_api')
+
+mongoose.connect('mongodb://vinod:vinod123@ds063769.mongolab.com:63769/concorde_api');
 
 var Translations        = require('./app/models/translations');
 // calling dependencies
@@ -37,7 +38,7 @@ router.use(function(req, res, next) {
       //do logging
       console.log('Concorde translations server is currently running.');
       next();  //make sure we go to the next routes and don't stop here
-})
+});
 
 //test route
 router.get('/', function(req, res) {
@@ -54,15 +55,15 @@ router.route('/translation')
     	var translations = new Translations();		// create a new instance of the Translations model
     	//translations.name = req.body.name;  // set the translations name (comes from the request)
       //translations.id              = generateUUID();
-      //translations.sourceLanguage  = req.body.sourceLanguage;
-      //translations.targetLanguage  = req.body.targetLanguage;
-      //translations.source          = req.body.source;
-      //translations.professional    = req.body.professional;
-      //translations.mt              = req.body.mt;
-      //translations.updateCounter   = 0; // initializing updatecounter to 0
-      //translations.status          = req.body.status;
-      translations.translationRequests  = req.body.translationRequests;
-      translations.markModified('translationRequests');
+      translations.sourceLanguage  = req.body.sourceLanguage;
+      translations.targetLanguage  = req.body.targetLanguage;
+      translations.source          = req.body.source;
+      translations.professional    = req.body.professional;
+      translations.mt              = req.body.mt;
+      translations.updateCounter   = 0; // initializing updatecounter to 0
+      translations.status          = req.body.status;
+      //translations.translationRequests  = req.body.translationRequests;
+      //translations.markModified('translationRequests');
       console.log(req.body.translationRequests);
       res.statusCode = 201;
 
@@ -83,8 +84,8 @@ router.route('/translation')
                 res.send(err);
 
             res.json(translation);
-        })
-    })
+        });
+    });
 
 // on routes that end in /translation/:translations_id
 // this methods will be used to get a specific translations with ID
@@ -148,4 +149,5 @@ router.route('/translation/:translations_id')
 app.use('/v2.0', router);
 
 app.listen(port);
+module.export = app;
 console.log('Listening to port number: ' + port);
