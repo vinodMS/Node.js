@@ -9,13 +9,17 @@ var Translations        = require('./app/models/translations');
 // calling dependencies
 var express     = require('express');
 var app         = express();
-module.exports = app;
+module.exports  = app;
 var bodyParser  = require('body-parser');
+var morgan      = require('morgan');
+//app.use(express.logger('dev'));
+
 
 
 //configure app to use bodyParser() to get the data from a POST
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(bodyParser.json());
+app.use(morgan('dev'));
 
 var port = process.env.PORT || 8122;
 
@@ -37,7 +41,7 @@ var router = express.Router();
 // middleware to use for all requests
 router.use(function(req, res, next) {
       //do logging
-      console.log('Concorde translations server is currently running.');
+      //console.log('Concorde translations server is currently running.');
       next();  //make sure we go to the next routes and don't stop here
 });
 
@@ -54,8 +58,7 @@ router.route('/translation')
     .post(function(req, res) {
 
     	var translations = new Translations();		// create a new instance of the Translations model
-    	//translations.name = req.body.name;  // set the translations name (comes from the request)
-      //translations.id              = generateUUID();
+
       translations.sourceLanguage  = req.body.sourceLanguage;
       translations.targetLanguage  = req.body.targetLanguage;
       translations.source          = req.body.source;
@@ -65,14 +68,16 @@ router.route('/translation')
       translations.status          = req.body.status;
       //translations.translationRequests  = req.body.translationRequests;
       //translations.markModified('translationRequests');
-      console.log(req.body.translationRequests);
-      res.statusCode = 201;
+      //console.log(req.body.translationRequests);
+      //res.statusCode = 201;
 
     	translations.save(function(err) {
-    		if (err)
-    			res.send(err);
-
-    		res.json({ message: 'Translations request succesfully created!' });
+    		if (err)  {
+          concole.log(err);
+          res.status(400).json({status: 'failure'});
+        } else {
+          res.status(201).json({ message: 'Translations request succesfully created!' });
+        }
     	});
 
 
@@ -82,8 +87,8 @@ router.route('/translation')
     .get(function(req, res) {
         Translations.find(function(err, translation)  {
             if (err) {
-              console.log(err);
-              res.status(404).json({status: "Bad Request"});
+              //console.log(err);
+              res.status(400).json({status: "Bad Request"});
             } else {
               res.status(200).json(translation);
             }
@@ -98,11 +103,14 @@ router.route('/translation/:translations_id')
     	// get the translations with that id
     	.get(function(req, res) {
         		Translations.findById(req.params.translations_id, function(err, translations) {
-        			if (err)
-        				res.send(err);
-              //res.json({ message: 'Request id found' });
-        			res.json(translations);
-              res.statusCode = 200; //returning ok code
+        			if (err) {
+                res.status(404).json({status: "Request ID not found"});
+              } else
+                if (req.params.translations_id == 'undefined'){
+                res.status(404).json({status: "Request ID not found"});
+              } else {
+                res.status(200).json(translations);
+              }
         		});
     	})
 
@@ -151,6 +159,7 @@ router.route('/translation/:translations_id')
 
 app.use('/v2.0', router);
 
+
 app.listen(port);
-module.export = app;
-console.log('Listening to port number: ' + port);
+//module.export = app;
+//console.log('Listening to port number: ' + port);
