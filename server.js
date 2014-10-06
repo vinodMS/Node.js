@@ -9,6 +9,7 @@ var Translations        = require('./app/models/translations');
 // calling dependencies
 var express     = require('express');
 var app         = express();
+module.exports = app;
 var bodyParser  = require('body-parser');
 
 
@@ -80,10 +81,12 @@ router.route('/translation')
     //get all the translations
     .get(function(req, res) {
         Translations.find(function(err, translation)  {
-            if (err)
-                res.send(err);
-
-            res.json(translation);
+            if (err) {
+              console.log(err);
+              res.status(404).json({status: "Bad Request"});
+            } else {
+              res.status(200).json(translation);
+            }
         });
     });
 
