@@ -49,17 +49,17 @@ router.use(function(req, res, next) {
 
 //test route
 router.get('/', function(req, res) {
-		res.json({ message: 'Concorde API!' });
+    res.json({ message: 'Concorde API!' });
 });
 
 
 
 router.route('/translation')
 
-  	// create a translations
+    // create a translations
     .post(function(req, res) {
 
-    	var translations = new Translations();		// create a new instance of the Translations model
+      var translations = new Translations();		// create a new instance of the Translations model
 
       translations.id              = req.body.id;
       translations.sourceLanguage  = req.body.sourceLanguage;
@@ -76,53 +76,53 @@ router.route('/translation')
       var url = "http://" + req.headers.host;
       var links =
 
-		[
-			{
-				"rel": "translation",
-				"href": url + translationMethodName + translations.id,
-				"type": "application/json",
-				"title": "Newly created translation request " + translations.id + " + created on " + " " + d,
-				"verb": "GET"
-			},
-			{
-				"rel": "translation.cancel",
-				"href": url + translationMethodName +"cancel/" + translations.id,
-				"type": "application/json",
-				"verb": "PATCH"
-			},
-			{
-				"rel": "translation.confirm",
-				"href": url + translationMethodName +"reject/" + translations.id,
-				"type": "application/json",
-				"verb": "PATCH"
-			},
-			{
-				"rel": "translation.reject",
-				"href": url + translationMethodName + "confirm/" + translations.id,
-				"type": "application/json",
-				"verb": "PATCH"
-			},
-			{
-				"rel": "translation.reject",
-				"href": url + translationMethodName + "accept/" + translations.id,
-				"type": "application/json",
-				"verb": "PATCH"
-			},
-			{
-				"rel": "translation.patch",
-				"href": url + translationMethodName + translations.id,
-				"type": "application/json",
-				"verb": "PATCH"
-			}
-		];
-    	translations.save(function(err) {
-    		if (err)  {
+    [
+      {
+        "rel": "translation",
+        "href": url + translationMethodName + translations.id,
+        "type": "application/json",
+        "title": "Newly created translation request " + translations.id + " + created on " + " " + d,
+        "verb": "GET"
+      },
+      {
+        "rel": "translation.cancel",
+        "href": url + translationMethodName +"cancel/" + translations.id,
+        "type": "application/json",
+        "verb": "PATCH"
+      },
+      {
+        "rel": "translation.confirm",
+        "href": url + translationMethodName +"reject/" + translations.id,
+        "type": "application/json",
+        "verb": "PATCH"
+      },
+      {
+        "rel": "translation.reject",
+        "href": url + translationMethodName + "confirm/" + translations.id,
+        "type": "application/json",
+        "verb": "PATCH"
+      },
+      {
+        "rel": "translation.reject",
+        "href": url + translationMethodName + "accept/" + translations.id,
+        "type": "application/json",
+        "verb": "PATCH"
+      },
+      {
+        "rel": "translation.patch",
+        "href": url + translationMethodName + translations.id,
+        "type": "application/json",
+        "verb": "PATCH"
+      }
+    ];
+      translations.save(function(err) {
+        if (err)  {
           concole.log(err);
           res.status(400).json({status: 'failure'});
         } else {
           res.status(201).json({ links: links });
         }
-    	});
+      });
 
 
     })
@@ -139,78 +139,78 @@ router.route('/translation')
         });
     });
 
-// on routes that end in /translation/:translations.id
+// on routes that end in /translation/:translations_id
 // this methods will be used to get a specific translations with ID
 // ----------------------------------------------------
-router.route('/translation/:translations.id')
+router.route('/translation/:translations_id')
 
-    	// get the translations with that id
-    	.get(function(req, res) {
-        		Translations.findById(req.params.translations.id, function(err, translations) {
-        			if (err) {
+      // get the translations with that id
+      .get(function(req, res) {
+            Translations.findById(req.params.translations_id, function(err, translations) {
+              if (err) {
                 res.status(404).json({status: "Request ID not found"});
               } else
-                if (req.params.translations.id === undefined){
+                if (req.params.translations_id === undefined){
                 res.status(404).json({status: "Request ID not found"});
               } else {
                 res.status(200).json(translations);
               }
-        		});
-    	})
+            });
+      })
 
-    	// update the translations with this id
-    	.put(function(req, res) {
+      // update the translations with this id
+      .put(function(req, res) {
 
-    		// use our translations model to find the translations we want
-    		Translations.findById(req.params.translations.id, function(err, translations) {
+        // use our translations model to find the translations we want
+        Translations.findById(req.params.translations_id, function(err, translations) {
 
-    			if (err)
-    				res.send(err);
+          if (err)
+            res.send(err);
 
-    			translations.sourceLanguage  = req.body.sourceLanguage; 	// update  source language code
+          translations.sourceLanguage  = req.body.sourceLanguage; 	// update  source language code
           translations.targetLanguage  = req.body.targetLanguage;
           translations.source          = req.body.source;
           translations.professional    = req.body.professional;
           translations.mt              = req.body.mt;
           translations.status = req.body.status;
           translations.updateCounter += 1;
-    			// save the translations
-    			translations.save(function(err) {
-    				if (err)
-    					res.send(err);
+          // save the translations
+          translations.save(function(err) {
+            if (err)
+              res.send(err);
 
 
             res.statusCode = 200; //returning ok code
-    				res.json({ message: 'Translations request was succesfully changed' });
-    			});
+            res.json({ message: 'Translations request was succesfully changed' });
+          });
 
-    		});
-    	})
+        });
+      })
 
-    	// delete the translations with this id
-    	.delete(function(req, res) {
-    		Translations.remove({
-    			_id: req.params.translations.id
-    		}, function(err, translations) {
-    			if (err)
-    				res.send(err);
+      // delete the translations with this id
+      .delete(function(req, res) {
+        Translations.remove({
+          _id: req.params.translations_id
+        }, function(err, translations) {
+          if (err)
+            res.send(err);
 
-    			res.json({ message: 'Successfully deleted' });
+          res.json({ message: 'Successfully deleted' });
           res.statusCode = 204;
-    		});
-    	});
+        });
+      });
 
 
-// on routes that end in /accept/:translations.id
+// on routes that end in /accept/:translations_id
 // this methods will be used to accept a specific translations with ID
 // ----------------------------------------------------
-router.route('/accept/:translations.id')
+router.route('/accept/:translations_id')
 
 // accept the translations with this id
 .put(function(req, res) {
 
   // use our translations model to find the translations we want
-  Translations.findById(req.params.translations.id, function(err, translations) {
+  Translations.findById(req.params.translations_id, function(err, translations) {
 
     if (!err){
       translations.status = 'accepted';
@@ -231,16 +231,16 @@ router.route('/accept/:translations.id')
 });
 
 
-// on routes that end in /reject/:translations.id
+// on routes that end in /reject/:translations_id
 // this methods will be used to rejects a specific translations with ID
 // ----------------------------------------------------
-router.route('/reject/:translations.id')
+router.route('/reject/:translations_id')
 
 // reject the translations with this id
 .put(function(req, res) {
 
   // use our translations model to find the translations we want
-  Translations.findById(req.params.translations.id, function(err, translations) {
+  Translations.findById(req.params.translations_id, function(err, translations) {
 
     if (!err){
       translations.status = 'rejected';
@@ -260,16 +260,16 @@ router.route('/reject/:translations.id')
   });
 });
 
-// on routes that end in /confirm/:translations.id
+// on routes that end in /confirm/:translations_id
 // this methods will be used to confirm a specific translations with ID
 // ----------------------------------------------------
-router.route('/confirm/:translations.id')
+router.route('/confirm/:translations_id')
 
 // confirm the translations with this id
 .put(function(req, res) {
 
   // use our translations model to find the translations we want
-  Translations.findById(req.params.translations.id, function(err, translations) {
+  Translations.findById(req.params.translations_id, function(err, translations) {
 
     if (!err){
       translations.status = 'confirmed';
@@ -289,16 +289,16 @@ router.route('/confirm/:translations.id')
   });
 });
 
-// on routes that end in /cancel/:translations.id
+// on routes that end in /cancel/:translations_id
 // this methods will be used to cancel a specific translations with ID
 // ----------------------------------------------------
-router.route('/cancel/:translations.id')
+router.route('/cancel/:translations_id')
 
 // cancel the translations with this id
 .put(function(req, res) {
 
   // use our translations model to find the translations we want
-  Translations.findById(req.params.translations.id, function(err, translations) {
+  Translations.findById(req.params.translations_id, function(err, translations) {
 
     if (!err){
       translations.status = 'cancelled';

@@ -37,7 +37,7 @@ describe('Request-2', function () {
   function (done) {
 
     supertest(app)
-    .get('/v2.0/translation/543304f3fddf1d0bd4000001')
+    .get('/v2.0/translation/543343bb2218ebfbed000001')
     .expect(200)
     .end(function (err, res) {
       res.status.should.equal(200);
@@ -65,7 +65,7 @@ describe('Request-3', function () {
   function (done) {
 
     supertest(app)
-    .put('/v2.0/accept/543304f3fddf1d0bd4000001')
+    .put('/v2.0/accept/543343bb2218ebfbed000001')
     .expect(200)
     .end(function (err, res) {
       res.status.should.equal(200);
