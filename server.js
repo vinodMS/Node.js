@@ -15,6 +15,7 @@ var morgan      = require('morgan');
 
 var translationMethodName = '/translation/';
 var d = new Date().getTime();
+//var url = "http://" + req.headers.host;
 //app.use(express.logger('dev'));
 
 
@@ -48,6 +49,7 @@ router.use(function(req, res, next) {
       next();  //make sure we go to the next routes and don't stop here
 });
 
+
 //test route
 router.get('/', function(req, res) {
     res.json({ message: 'Concorde API!' });
@@ -74,44 +76,44 @@ router.route(translationMethodName)
       //translations.markModified('translationRequests');
       //console.log(req.body.translationRequests);
       //res.statusCode = 201;
-      var url = "http://" + req.headers.host;
+      var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
       var links =
 
     [
       {
         "rel": "translation",
-        "href": url + translationMethodName + translations.id,
+        "href": fullUrl + translations.id,
         "type": "application/json",
         "title": "Newly created translation request " + translations.id + " + created on " + " " + d,
         "verb": "GET"
       },
       {
         "rel": "translation.cancel",
-        "href": url + translationMethodName +"cancel/" + translations.id,
+        "href": fullUrl +"cancel/" + translations.id,
         "type": "application/json",
         "verb": "PATCH"
       },
       {
         "rel": "translation.confirm",
-        "href": url + translationMethodName +"reject/" + translations.id,
+        "href": fullUrl +"reject/" + translations.id,
         "type": "application/json",
         "verb": "PATCH"
       },
       {
         "rel": "translation.reject",
-        "href": url + translationMethodName + "confirm/" + translations.id,
+        "href": fullUrl + "confirm/" + translations.id,
         "type": "application/json",
         "verb": "PATCH"
       },
       {
         "rel": "translation.reject",
-        "href": url + translationMethodName + "accept/" + translations.id,
+        "href": fullUrl + "accept/" + translations.id,
         "type": "application/json",
         "verb": "PATCH"
       },
       {
         "rel": "translation.patch",
-        "href": url + translationMethodName + translations.id,
+        "href": fullUrl + translations.id,
         "type": "application/json",
         "verb": "PATCH"
       }
@@ -206,7 +208,7 @@ router.route(translationMethodName + ':translations_id')
 // on routes that end in /status/:translations_id
 // this methods will be used to return the status of a specific translations with ID
 // ----------------------------------------------------
-router.route('/status/:translations_id')
+router.route(translationMethodName +'status/:translations_id')
 
 // status of the translations with this id
 .get(function(req, res) {
@@ -228,7 +230,7 @@ router.route('/status/:translations_id')
 // on routes that end in /accept/:translations_id
 // this methods will be used to accept a specific translations with ID
 // ----------------------------------------------------
-router.route('/accept/:translations_id')
+router.route(translationMethodName + 'accept/:translations_id')
 
 // accept the translations with this id
 .put(function(req, res) {
@@ -258,7 +260,7 @@ router.route('/accept/:translations_id')
 // on routes that end in /reject/:translations_id
 // this methods will be used to rejects a specific translations with ID
 // ----------------------------------------------------
-router.route('/reject/:translations_id')
+router.route(translationMethodName + 'reject/:translations_id')
 
 // reject the translations with this id
 .put(function(req, res) {
@@ -287,7 +289,7 @@ router.route('/reject/:translations_id')
 // on routes that end in /confirm/:translations_id
 // this methods will be used to confirm a specific translations with ID
 // ----------------------------------------------------
-router.route('/confirm/:translations_id')
+router.route(translationMethodName + 'confirm/:translations_id')
 
 // confirm the translations with this id
 .put(function(req, res) {
@@ -316,7 +318,7 @@ router.route('/confirm/:translations_id')
 // on routes that end in /cancel/:translations_id
 // this methods will be used to cancel a specific translations with ID
 // ----------------------------------------------------
-router.route('/cancel/:translations_id')
+router.route(translationMethodName + 'cancel/:translations_id')
 
 // cancel the translations with this id
 .put(function(req, res) {
