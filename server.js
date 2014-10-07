@@ -12,7 +12,8 @@ var app         = express();
 module.exports  = app;
 var bodyParser  = require('body-parser');
 var morgan      = require('morgan');
-var translationMethodName = '/v2.0/translation/';
+
+var translationMethodName = '/translation/';
 var d = new Date().getTime();
 //app.use(express.logger('dev'));
 
@@ -54,7 +55,7 @@ router.get('/', function(req, res) {
 
 
 
-router.route('/translation')
+router.route(translationMethodName)
 
     // create a translations
     .post(function(req, res) {
@@ -142,18 +143,18 @@ router.route('/translation')
 // on routes that end in /translation/:translations_id
 // this methods will be used to get a specific translations with ID
 // ----------------------------------------------------
-router.route('/translation/:translations_id')
+router.route(translationMethodName + ':translations_id')
 
       // get the translations with that id
       .get(function(req, res) {
             Translations.findById(req.params.translations_id, function(err, translations) {
-              if (err) {
-                res.status(404).json({status: "Request ID not found"});
+              if (!translations) {
+                res.status(404).json({message: "Request ID not found"});
               } else
-                if (req.params.translations_id === undefined){
-                res.status(404).json({status: "Request ID not found"});
+                if (translations){
+                  res.status(200).json(translations);
               } else {
-                res.status(200).json(translations);
+                res.status(500).json({message: "Server Failure"});
               }
             });
       })
@@ -163,26 +164,25 @@ router.route('/translation/:translations_id')
 
         // use our translations model to find the translations we want
         Translations.findById(req.params.translations_id, function(err, translations) {
+          if (!translations){
+            res.status(404).json({status: "Request ID not found"});
+          } else {
+            translations.sourceLanguage  = req.body.sourceLanguage; // update source language code
+            translations.targetLanguage  = req.body.targetLanguage;
+            translations.source          = req.body.source;
+            translations.professional    = req.body.professional;
+            translations.mt              = req.body.mt;
+            translations.status = req.body.status;
+            translations.updateCounter += 1;
 
-          if (err)
-            res.send(err);
-
-          translations.sourceLanguage  = req.body.sourceLanguage; 	// update  source language code
-          translations.targetLanguage  = req.body.targetLanguage;
-          translations.source          = req.body.source;
-          translations.professional    = req.body.professional;
-          translations.mt              = req.body.mt;
-          translations.status = req.body.status;
-          translations.updateCounter += 1;
-          // save the translations
-          translations.save(function(err) {
-            if (err)
-              res.send(err);
-
-
-            res.statusCode = 200; //returning ok code
-            res.json({ message: 'Translations request was succesfully changed' });
-          });
+            translations.save(function(err) {
+              if (err){
+                res.status(500).json({status: "Server Failure"});
+              } else{
+                res.status(200).json({ message: 'Translations request was succesfully changed' });
+              }
+            });
+          }
 
         });
       })
@@ -192,14 +192,38 @@ router.route('/translation/:translations_id')
         Translations.remove({
           _id: req.params.translations_id
         }, function(err, translations) {
-          if (err)
-            res.send(err);
-
-          res.json({ message: 'Successfully deleted' });
-          res.statusCode = 204;
+          if (!translations){
+            res.status(404).json({status: "Request ID not found"});
+          } else
+            if(err){
+              res.status(500).json({status: "Server Failure"});
+            } else{
+            res.status(204).json({ status: 'Successfully deleted' });
+          }
         });
       });
 
+// on routes that end in /status/:translations_id
+// this methods will be used to return the status of a specific translations with ID
+// ----------------------------------------------------
+router.route('/status/:translations_id')
+
+// status of the translations with this id
+.get(function(req, res) {
+
+  // use our translations model to find the translations we want
+  Translations.findById(req.params.translations_id, function(err, translations) {
+
+    if (!translations){
+      res.status(404).json({message: "Request ID not found"});
+    } else
+        if (err) {
+          res.status(500).json({message: "Server Failure"});
+        } else {
+          res.status(200).json({status: translations.status});
+        }
+    });
+});
 
 // on routes that end in /accept/:translations_id
 // this methods will be used to accept a specific translations with ID
@@ -212,7 +236,7 @@ router.route('/accept/:translations_id')
   // use our translations model to find the translations we want
   Translations.findById(req.params.translations_id, function(err, translations) {
 
-    if (!err){
+    if (translations){
       translations.status = 'accepted';
       translations.updateCounter += 1;
       // save the translations
@@ -248,7 +272,7 @@ router.route('/reject/:translations_id')
       // save the translations
       translations.save(function(err) {
         if (err) {
-          res.status(500).json({status: "Server Failure"});
+          res.status(500).json({message: "Server Failure"});
         } else {
           res.status(200).json({message: "Translations request was succesfully rejected"});
         }
