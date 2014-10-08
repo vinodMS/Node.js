@@ -39,13 +39,14 @@ var port = process.env.PORT || 8122;
     return uuid;
 };*/
 
-// routes for API
+// ROUTES FOR OUR API
+// =============================================================================
 var router = express.Router();
 
 // middleware to use for all requests
 router.use(function(req, res, next) {
-      //do logging
-      //console.log('Concorde translations server is currently running.');
+
+      console.log('Concorde translations server is currently running.');
       next();  //make sure we go to the next routes and don't stop here
 });
 
@@ -147,7 +148,7 @@ router.route(translationMethodName)
 // ----------------------------------------------------
 router.route(translationMethodName + ':translations_id')
 
-      // get the translations with that id
+      // get the translations with the specified id
       .get(function(req, res) {
             Translations.findById(req.params.translations_id, function(err, translations) {
               if (!translations) {
@@ -344,9 +345,11 @@ router.route(translationMethodName + 'cancel/:translations_id')
   });
 });
 
+// REGISTER OUR ROUTES -------------------------------
+// all of our routes will be prefixed with /v2.0
 app.use('/v2.0', router);
 
-
+// START THE SERVER
+// =============================================================================
 app.listen(port);
-//module.export = app;
-//console.log('Listening to port number: ' + port);
+console.log('Listening to port number: ' + port);

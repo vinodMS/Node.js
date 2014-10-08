@@ -5,6 +5,7 @@ var Schema            = mongoose.Schema;
 
 var TranslationSchema   = new Schema({
 	      id:                 String,
+				_id: 								false, // disables the object id in mongodb     						
         sourceLanguage:     String,
         targetLanguage:     String,
         source:             String,
