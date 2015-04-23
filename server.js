@@ -12,12 +12,156 @@ var app         = express();
 module.exports  = app;
 var bodyParser  = require('body-parser');
 var morgan      = require('morgan');
+var LanguageDetect = require('languagedetect');
+var lngDetector = new LanguageDetect();
+var BCP47 = require('./app/BCP47');
+
+/*=========================================================================================
+==========================Methods currently supported by Concorde API===================*/
 
 var translationMethodName = '/translation/';
-var d = new Date().getTime();
-//var url = "http://" + req.headers.host;
-//app.use(express.logger('dev'));
+// var commentMethodName  = '/comment/';
+// var scoreMethodName    = '/score/';
+// var callbackMethodName = '/callback/'
 
+/*=======================================================================================*/
+
+var d = new Date().getTime();
+
+
+// Use machine translation
+var translate = require('node-google-translate/lib/translate');
+var assert = require('assert');
+var key = 'AIzaSyCU63MqmmwgQW7826dplPN8a0hoJibcdJQ';
+
+/*=========================================================================================
+=========================================================================================*/
+
+var allowedAttributes =
+{
+	translationRequest:
+		{
+			id: "id",
+			callbackURL: "url",
+			links: "links",
+			sourceLanguage: "language",
+			targetLanguage: "language",
+			source: "string",
+			target: "string",
+			mt: ["true", "false"],
+			crowd: ["true", "false"],
+			professional: ["true", "false"],
+			postedit: ["true", "false"],
+			comment: "string",
+			translator: "string",
+			owner: "string",
+			creationDatetime: "date",
+			modificationDatetime: "date",
+			updateCounter: "int",
+			status: ["initial", "translated", "reviewed", "final", "rejected", "accepted", "pending", "timeout"]
+		},
+	comment:
+		{
+			id: "id",
+			referenceId: "id",
+			links: "links",
+			callbackURL: "url",
+			language: "language",
+			text: "string",
+			creationDatetime: "date",
+			modificationDatetime: "date",
+		},
+	score:
+		{
+			id: "id",
+			requestId: "id",
+			links: "links",
+			callbackURL: "url",
+			score: "int",
+			mt: ["true", "false"],
+			crowd: ["true", "false"],
+			professional: ["true", "false"],
+			text: "string",
+			creationDatetime: "date",
+			modificationDatetime: "date",
+		},
+	callbackRequest:
+		{
+			id: "id",
+			requestId: "id",
+			links: "links",
+			callbackURL: "url",
+			score: "int",
+			mt: ["true", "false"],
+			crowd: ["true", "false"],
+			professional: ["true", "false"],
+			callbackText: "string",
+			callbackStatus: "string",
+			callBackcreationDatetime: "date"
+		}
+};
+
+function checkAttribute(method, attribute, value)
+{
+	var reqallowed = allowedAttributes[method];
+	value = value + ""; // make a string anyway for the value
+	// console.log("checkAttribute:\n" + reqallowed);
+	for (var allowedprop in reqallowed)
+	{
+		// console.log(allowedprop);
+		if (!reqallowed.hasOwnProperty(allowedprop))
+		{
+			//The current property is not a direct property of p
+			continue;
+		}
+		if (allowedprop == attribute)
+		{
+			// check value - very explicit here
+			var allowedvalue= reqallowed[allowedprop];
+			if (allowedvalue instanceof Array)
+			{
+				for (var i = 0; i < allowedvalue.length; i++)
+				{
+					if (allowedvalue[i] == value)
+						return true;
+				}
+				return false;
+			}
+			else
+				return true;
+		}
+	}
+	return false;
+}
+
+function checkAttributes(method, request)
+{
+	if (request === undefined)
+	{
+		return [false, 400, "Undefined request method", 1000];
+	}
+	// console.log("checkAttributes:\n" + method + "\nRequest:" + request);
+	for (var prop in request)
+	{
+		if (!request.hasOwnProperty(prop))
+		{
+			//The current property is not a direct property of p
+			continue;
+		}
+		var value = request[prop];
+		var attok = checkAttribute(method, prop, value);
+		if (attok === false)
+		{
+			return [false, 400, "\"" + prop + "\" with value \"" + value + "\" not allowed for request \"" + method + "\"", 1010];
+		}
+	}
+	return [true, 200, "", 0]; // correct request
+}
+
+
+
+/*=========================================================================================
+=========================================================================================*/
 
 
 //configure app to use bodyParser() to get the data from a POST
@@ -28,7 +172,7 @@ app.use(morgan('dev'));
 var port = process.env.PORT || 8122;
 
 // generate an unique id for new requests
-/* function generateUUID()
+ function generateUUID()
 {
     var d = new Date().getTime();
     var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -36,8 +180,9 @@ var port = process.env.PORT || 8122;
         d = Math.floor(d/16);
         return (c=='x' ? r : (r&0x7|0x8)).toString(16);
     });
+		//console.log(uuid);
     return uuid;
-};*/
+}
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -62,10 +207,11 @@ router.route(translationMethodName)
 
     // create a translations
     .post(function(req, res) {
-
+      var da = new Date();
+	    var d = da.toISOString();
       var translations = new Translations();		// create a new instance of the Translations model
 
-      translations.id              = req.body.id;
+      translations.id              = generateUUID();
       translations.sourceLanguage  = req.body.sourceLanguage;
       translations.targetLanguage  = req.body.targetLanguage;
       translations.source          = req.body.source;
@@ -73,61 +219,16 @@ router.route(translationMethodName)
       translations.mt              = req.body.mt;
       translations.updateCounter   = 0; // initializing updatecounter to 0
       translations.status          = req.body.status;
-      //translations.translationRequests  = req.body.translationRequests;
-      //translations.markModified('translationRequests');
-      //console.log(req.body.translationRequests);
-      //res.statusCode = 201;
-      var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-      var links =
+      translations.comment         = '';
 
-    [
-      {
-        "rel": "translation",
-        "href": fullUrl + translations.id,
-        "type": "application/json",
-        "title": "Newly created translation request " + translations.id + " + created on " + " " + d,
-        "verb": "GET"
-      },
-      {
-        "rel": "translation.cancel",
-        "href": fullUrl +"cancel/" + translations.id,
-        "type": "application/json",
-        "verb": "PATCH"
-      },
-      {
-        "rel": "translation.confirm",
-        "href": fullUrl +"reject/" + translations.id,
-        "type": "application/json",
-        "verb": "PATCH"
-      },
-      {
-        "rel": "translation.reject",
-        "href": fullUrl + "confirm/" + translations.id,
-        "type": "application/json",
-        "verb": "PATCH"
-      },
-      {
-        "rel": "translation.reject",
-        "href": fullUrl + "accept/" + translations.id,
-        "type": "application/json",
-        "verb": "PATCH"
-      },
-      {
-        "rel": "translation.patch",
-        "href": fullUrl + translations.id,
-        "type": "application/json",
-        "verb": "PATCH"
-      }
-    ];
+
       translations.save(function(err) {
         if (err)  {
-          concole.log(err);
+          console.log(err);
           res.status(400).json({status: 'failure'});
-        } else {
-          res.status(201).json({ links: links });
         }
-      });
 
+      });
 
     })
 
@@ -170,13 +271,14 @@ router.route(translationMethodName + ':translations_id')
           if (!translations){
             res.status(404).json({status: "Request ID not found"});
           } else {
-            translations.sourceLanguage  = req.body.sourceLanguage; // update source language code
+            translations.sourceLanguage  = req.body.sourceLanguage; // update source language codeZ
             translations.targetLanguage  = req.body.targetLanguage;
             translations.source          = req.body.source;
             translations.professional    = req.body.professional;
             translations.mt              = req.body.mt;
-            translations.status = req.body.status;
+            translations.status          = req.body.status;
             translations.updateCounter += 1;
+
 
             translations.save(function(err) {
               if (err){
@@ -344,6 +446,125 @@ router.route(translationMethodName + 'cancel/:translations_id')
 
   });
 });
+
+
+/* METHODS TO PERFORM SUB-TASKS ------------------------------------------------
+================================================================================*/
+
+function getMT(translations) {
+  if(translations.mt === true){
+    // Translate source text
+    translations.status = 'accepted';
+    translations.updateCounter += 1;
+    translate({key: key, q: translations.source, target: translations.targetLanguage}, function(result){
+      console.log(result);
+    });
+  }
+}
+
+function CRSNotify(){
+  console.log('reported');
+}
+
+
+function langAudit(translations,req, res){
+  var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+  var links =
+
+[
+  {
+    "rel": "translation",
+    "href": fullUrl + translations.id,
+    "type": "application/json",
+    "title": "Newly created translation request " + translations.id + " + created on " + " " + translations.creationDatetime,
+    "verb": "GET"
+  },
+  {
+    "rel": "translation.cancel",
+    "href": fullUrl +"cancel/" + translations.id,
+    "type": "application/json",
+    "verb": "PATCH"
+  },
+  {
+    "rel": "translation.confirm",
+    "href": fullUrl +"reject/" + translations.id,
+    "type": "application/json",
+    "verb": "PATCH"
+  },
+  {
+    "rel": "translation.reject",
+    "href": fullUrl + "confirm/" + translations.id,
+    "type": "application/json",
+    "verb": "PATCH"
+  },
+  {
+    "rel": "translation.reject",
+    "href": fullUrl + "accept/" + translations.id,
+    "type": "application/json",
+    "verb": "PATCH"
+  },
+  {
+    "rel": "translation.patch",
+    "href": fullUrl + translations.id,
+    "type": "application/json",
+    "verb": "PATCH"
+  }
+];
+
+  	var newQuote =
+  	{
+  		id                  : translations.id,
+  		sourceLanguage      : translations.sourceLanguage,
+  		targetLanguage      : translations.targetLanguage,
+  		source              : translations.source,
+  		target              : translations.target,
+  		mt                  : translations.mt,
+  		crowd               : translations.crowd,
+  		professional        :	translations.professional,
+  		postedit            :	translations.postedit,
+  		comment             :	translations.comment,
+  		translator          :	translations.translator,
+  		owner               :	translations.owner,
+  		status              :	translations.status,
+  		creationDatetime    : translations.creationDatetime,
+  		modificationDatetime: translations.modificationDatetime,
+  		updateCounter       : 0,
+  		links               : links
+  	};
+
+    var newTranslationRequest =
+    {
+  	   translationRequest: newQuote
+    };
+
+  var langDetected; // Receives the language detection results
+  var sourceTLang;  // The LI results will be [ [ 'dutch', 0.2871568627450981 ]], get the object key, example dutch.
+  var sourceLang;   // Source language sent as BCP47, match with language
+  var langchecked; // set true/false for detected = source
+
+  langDetected = lngDetector.detect(translations.source); //detect language
+	console.log(translations.source);
+  sourceTLang = langDetected[0][0]; // get the first language from the result
+  sourceLang = BCP47.getLang(translations.sourceLanguage); // convert BCP47 to lang name
+
+  if (sourceTLang == sourceLang)  {
+    langchecked = true;
+    res.status(201).json(newTranslationRequest);
+		getMT(translations);
+  }else
+      if(sourceTLang != sourceLang) {
+        langchecked = false;
+        res.status(409).json({message: "Translations request was rejected: Source laguage and text do not match"});
+        translations.status = 'rejected';
+        translations.comment= 'Translations request was rejected: Source laguage and text do not match' + translations.id;
+        return translations.status,translations.comment;
+      }
+      else {
+        CRSNotify(translations.id);
+      }
+    }
+
+//console.log(lngDetector.detect('vinod is het liefste vriendje',1));
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /v2.0

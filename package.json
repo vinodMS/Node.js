@@ -4,8 +4,10 @@
   "dependencies": {
     "body-parser": "~1.0.1",
     "express": "~4.0.0",
+    "google-translate": "^0.1.4",
     "mongoose": "~3.6.13",
-    "mongoskin": "^1.4.1"
+    "mongoskin": "^1.4.1",
+    "node-google-translate": "^0.1.0"
   },
   "devDependencies": {
     "logger": "0.0.1",
